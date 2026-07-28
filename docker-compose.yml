@@ -1,10 +1,39 @@
 services:
 
+  app:
+    image: yayansty/php83-apache-sqlsrv:0.1.0
+    container_name: hospital-app
+    restart: always
+
+    ports:
+      - "8080:80"
+
+    volumes:
+      - ./backend:/var/www/html
+      - /etc/localtime:/etc/localtime:ro
+
+    working_dir: /var/www/html
+
+    environment:
+      - TZ=Asia/Jakarta
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+    networks:
+      - hospital-network
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver2022
-
-    restart: unless-stopped
+    restart: always
 
     environment:
       ACCEPT_EULA: ${ACCEPT_EULA}
@@ -23,5 +52,12 @@ services:
       timeout: 10s
       retries: 10
 
+    networks:
+      - hospital-network
+
 volumes:
   sqlserver_data:
+
+networks:
+  hospital-network:
+    driver: bridge
