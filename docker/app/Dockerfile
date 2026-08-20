@@ -103,13 +103,13 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # PHP Configuration
 # =====================================================
 
-COPY docker/app/php.ini /usr/local/etc/php/php.ini
+COPY php.ini /usr/local/etc/php/php.ini
 
 # =====================================================
 # Apache Virtual Host
 # =====================================================
 
-COPY docker/app/vhost.conf \
+COPY vhost.conf \
      /etc/apache2/sites-available/000-default.conf
 
 # =====================================================
@@ -124,5 +124,12 @@ HEALTHCHECK \
 CMD curl -f http://localhost/ || exit 1
 
 WORKDIR /var/www/html
+
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 CMD ["apache2-foreground"]
