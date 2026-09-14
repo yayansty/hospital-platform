@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 
+	"medic-api/helpers"
 	"medic-api/models"
 )
 
@@ -94,7 +95,11 @@ func (r *PatientRepository) FindByID(id int64) (*models.Patient, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, helpers.ErrNotFound
+		}
+
+		return nil, helpers.ErrDatabase
 	}
 
 	return &patient, nil
@@ -154,16 +159,16 @@ func (r *PatientRepository) Update(patient *models.Patient) error {
 	)
 
 	if err != nil {
-		return err
+		return helpers.ErrDatabase
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return helpers.ErrDatabase
 	}
 
 	if rowsAffected == 0 {
-		return sql.ErrNoRows
+		return helpers.ErrNotFound
 	}
 
 	return nil
@@ -177,16 +182,16 @@ func (r *PatientRepository) Delete(id int64) error {
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {
-		return err
+		return helpers.ErrDatabase
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return helpers.ErrDatabase
 	}
 
 	if rowsAffected == 0 {
-		return sql.ErrNoRows
+		return helpers.ErrNotFound
 	}
 
 	return nil

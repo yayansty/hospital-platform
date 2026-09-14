@@ -1,8 +1,7 @@
 package controllers
 
 import (
-	"database/sql"
-	"encoding/json"
+    "encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -56,8 +55,9 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	patient, err := c.service.GetPatientByID(id)
-	if err != nil {
+patient, err := c.service.GetPatientByID(id)
+if err != nil {
+	if errors.Is(err, helpers.ErrNotFound) {
 		helpers.Error(
 			w,
 			http.StatusNotFound,
@@ -66,6 +66,25 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+
+	if errors.Is(err, helpers.ErrDatabase) {
+		helpers.Error(
+			w,
+			http.StatusInternalServerError,
+			"Database error",
+			nil,
+		)
+		return
+	}
+
+	helpers.Error(
+		w,
+		http.StatusInternalServerError,
+		"Failed to get patient",
+		nil,
+	)
+	return
+}
 
 	helpers.Success(
 		w,
@@ -163,15 +182,25 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err == sql.ErrNoRows {
-			helpers.Error(
-				w,
-				http.StatusNotFound,
-				"Patient not found",
-				nil,
-			)
-			return
-		}
+		if errors.Is(err, helpers.ErrNotFound) {
+	         helpers.Error(
+		     w,
+		     http.StatusNotFound,
+		     "Patient not found",
+		     nil,
+	       )
+	       return
+        }
+
+        if errors.Is(err, helpers.ErrDatabase) {
+	        helpers.Error(
+		    w,
+		    http.StatusInternalServerError,
+		    "Database error",
+		    nil,
+	       )
+	       return
+        }
 
 		helpers.Error(
 			w,
@@ -215,25 +244,35 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := c.service.DeletePatient(id); err != nil {
-		if err == sql.ErrNoRows {
-			helpers.Error(
-				w,
-				http.StatusNotFound,
-				"Patient not found",
-				nil,
-			)
-			return
-		}
+    if err := c.service.DeletePatient(id); err != nil {
+	   if errors.Is(err, helpers.ErrNotFound) {
+		  helpers.Error(
+			 w,
+			 http.StatusNotFound,
+			 "Patient not found",
+			 nil,
+		 )
+		return
+	}
 
-		helpers.Error(
+	if errors.Is(err, helpers.ErrDatabase) {
+		  helpers.Error(
 			w,
 			http.StatusInternalServerError,
-			"Failed to delete patient",
+			"Database error",
 			nil,
 		)
 		return
 	}
+
+	helpers.Error(
+		w,
+		http.StatusInternalServerError,
+		"Failed to delete patient",
+		nil,
+	)
+	return
+    }
 
 	helpers.Success(
 		w,
