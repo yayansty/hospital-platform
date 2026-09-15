@@ -40,7 +40,6 @@ services:
 
     networks:
       - hospital-network
-
   auth:
     image: yayansty/php83-apache-sqlsrv:1.0.0
     container_name: auth
