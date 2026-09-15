@@ -9,7 +9,7 @@ services:
 
     volumes:
     - ./services/api:/app
-    - go-mod-cache:/go/pkg/mod
+    - go-mod-cache:/go/pkg
     ports:
       - "8081:8080"
 
@@ -22,6 +22,17 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+
+      ORACLE_HOST: 192.168.4.253
+      ORACLE_PORT: "1521"
+      ORACLE_SERVICE: ORCL
+      ORACLE_USER: USER_TMC
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+
+      BPJS_URL: ${BPJS_URL}
+      BPJS_CONS_ID: ${BPJS_CONS_ID}
+      BPJS_SECRET_KEY: ${BPJS_SECRET_KEY}
+      BPJS_NOPPK: ${BPJS_NOPPK}
 
     depends_on:
       sqlserver:
