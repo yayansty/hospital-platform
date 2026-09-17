@@ -13,6 +13,12 @@ type RoomService struct {
 	aplicareClient *clients.AplicareClient
 }
 
+type BPJSSyncResult struct {
+	KodeRuang string `json:"koderuang"`
+	Success   bool   `json:"success"`
+	Message   string `json:"message"`
+}
+
 func NewRoomService(
 	repository *repositories.RoomRepository,
 	aplicareClient *clients.AplicareClient,
@@ -67,4 +73,49 @@ func (s *RoomService) UpdateAllRoomsToBPJS() ([]*clients.AplicareResponse, error
 	}
 
 	return responses, nil
+}
+
+func (s *RoomService) ReadRoomsFromBPJS(
+	start, limit int,
+) (*clients.AplicareBedReadResponse, error) {
+	return s.aplicareClient.ReadBeds(start, limit)
+}
+
+func (s *RoomService) SyncRoomsFromBPJS() ([]BPJSSyncResult, error) {
+
+	response, err := s.aplicareClient.ReadBeds(1, 100)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.MetaData.Code != 1 {
+		return nil, fmt.Errorf(
+			"BPJS error: %s",
+			response.MetaData.Message,
+		)
+	}
+
+	results := make([]BPJSSyncResult, 0, len(response.Response.List))
+
+	for _, bed := range response.Response.List {
+
+		err := s.repository.UpdateBPJSKamar(bed)
+
+		if err != nil {
+			results = append(results, BPJSSyncResult{
+				KodeRuang: bed.KodeRuang,
+				Success:   false,
+				Message:   err.Error(),
+			})
+			continue
+		}
+
+		results = append(results, BPJSSyncResult{
+			KodeRuang: bed.KodeRuang,
+			Success:   true,
+			Message:   "Berhasil update Oracle",
+		})
+	}
+
+	return results, nil
 }

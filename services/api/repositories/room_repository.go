@@ -2,7 +2,10 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
+	"time"
 
+	"medic-api/clients"
 	"medic-api/helpers"
 	"medic-api/models"
 )
@@ -129,4 +132,55 @@ func (r *RoomRepository) FindAvailability() ([]models.RoomAvailability, error) {
 	}
 
 	return rooms, nil
+}
+func (r *RoomRepository) UpdateBPJSKamar(
+	bed clients.AplicareBed,
+) error {
+
+	lastUpdate := time.Now().Format("2006-01-02 15:04:05")
+
+	query := `
+		UPDATE USER_TMC.BPJS_KAMAR
+		SET
+			KODEKELAS = :1,
+			NAMAKELAS = :2,
+			KAPASITAS = :3,
+			TERSEDIA = :4,
+			TERSEDIAPRIA = :5,
+			TERSEDIAWANITA = :6,
+			TERSEDIAPRIAWANITA = :7,
+			LASTUPDATE = :8
+		WHERE KODERUANG = :9
+	`
+
+	result, err := r.db.Exec(
+		query,
+		bed.KodeKelas,
+		bed.NamaKelas,
+		bed.Kapasitas,
+		bed.Tersedia,
+		bed.TersediaPria,
+		bed.TersediaWanita,
+		bed.TersediaPriaWanita,
+		lastUpdate,
+		bed.KodeRuang,
+	)
+
+	if err != nil {
+		return helpers.ErrDatabase
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return helpers.ErrDatabase
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf(
+			"BPJS_KAMAR dengan KODERUANG %s tidak ditemukan",
+			bed.KodeRuang,
+		)
+	}
+
+	return nil
 }

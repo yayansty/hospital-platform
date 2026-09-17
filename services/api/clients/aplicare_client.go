@@ -35,6 +35,42 @@ type AplicareResponse struct {
 	Response interface{} `json:"response"`
 }
 
+type AplicareBed struct {
+	Kapasitas          int64  `json:"kapasitas"`
+	KodeKelas          string `json:"kodekelas"`
+	KodeRuang          string `json:"koderuang"`
+	LastUpdate         int64  `json:"last_update"`
+	LastUpdateText     string `json:"lastupdate"`
+	NamaKelas          string `json:"namakelas"`
+	NamaRuang          string `json:"namaruang"`
+	RowNumber          int64  `json:"rownumber"`
+	Stat               string `json:"stat"`
+	Tersedia           int64  `json:"tersedia"`
+	TersediaPria       int64  `json:"tersediapria"`
+	TersediaPriaWanita int64  `json:"tersediapriawanita"`
+	TersediaWanita     int64  `json:"tersediawanita"`
+}
+
+type AplicareBedReadResponse struct {
+	MetaData struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	} `json:"metadata"`
+
+	Response struct {
+		List []AplicareBed `json:"list"`
+	} `json:"response"`
+}
+
+//type AplicareBedReadResponse struct {
+//	MetaData struct {
+//		Code    int    `json:"code"`
+//		Message string `json:"message"`
+//	} `json:"metadata"`
+
+//	Response interface{} `json:"response"`
+//}
+
 type AplicareBedRequest struct {
 	KodeKelas          string `json:"kodekelas"`
 	KodeRuang          string `json:"koderuang"`
@@ -167,4 +203,65 @@ func (c *AplicareClient) generateSignature(timestamp string) string {
 	mac.Write([]byte(message))
 
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func (c *AplicareClient) ReadBeds(start, limit int) (*AplicareBedReadResponse, error) {
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+
+	signature := c.generateSignature(timestamp)
+
+	url := fmt.Sprintf(
+		"%s/aplicaresws/rest/bed/read/%s/%d/%d",
+		c.BaseURL,
+		c.NPPK,
+		start,
+		limit,
+	)
+
+	req, err := http.NewRequest(
+		http.MethodGet,
+		url,
+		nil,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Aplicare request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-cons-id", c.ConsID)
+	req.Header.Set("X-timestamp", timestamp)
+	req.Header.Set("X-signature", signature)
+	req.Header.Set("User-Agent", "curl/8.0")
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call Aplicare: %w", err)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read Aplicare response: %w", err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf(
+			"Aplicare returned HTTP %d: %s",
+			resp.StatusCode,
+			string(responseBody),
+		)
+	}
+
+	var result AplicareBedReadResponse
+
+	if err := json.Unmarshal(responseBody, &result); err != nil {
+		return nil, fmt.Errorf(
+			"failed to decode Aplicare response: %w; response=%s",
+			err,
+			string(responseBody),
+		)
+	}
+
+	return &result, nil
 }

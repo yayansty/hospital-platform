@@ -89,3 +89,47 @@ func (c *RoomController) UpdateOneRoomToBPJS(w http.ResponseWriter, r *http.Requ
 		response,
 	)
 }
+
+func (c *RoomController) ReadRoomsFromBPJS(w http.ResponseWriter, r *http.Request) {
+	response, err := c.service.ReadRoomsFromBPJS(1, 20)
+	if err != nil {
+		helpers.Error(
+			w,
+			http.StatusInternalServerError,
+			"Failed to read rooms from BPJS",
+			err.Error(),
+		)
+		return
+	}
+
+	helpers.Success(
+		w,
+		http.StatusOK,
+		"Rooms successfully retrieved from BPJS",
+		response,
+	)
+}
+
+func (c *RoomController) SyncRoomsFromBPJS(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	results, err := c.service.SyncRoomsFromBPJS()
+
+	if err != nil {
+		helpers.Error(
+			w,
+			http.StatusInternalServerError,
+			"Failed to sync rooms from BPJS",
+			err.Error(),
+		)
+		return
+	}
+
+	helpers.Success(
+		w,
+		http.StatusOK,
+		"Rooms successfully synchronized from BPJS to Oracle",
+		results,
+	)
+}

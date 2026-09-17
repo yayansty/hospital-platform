@@ -23,4 +23,6 @@ func RegisterRoutes(
 	mux.HandleFunc("GET /api/rooms/availability", roomController.GetAvailability)
 
 	mux.HandleFunc("POST /api/rooms/availability/update-bpjs/{koderuang}", roomController.UpdateOneRoomToBPJS)
+	mux.HandleFunc("GET /api/rooms/availability/bpjs", roomController.ReadRoomsFromBPJS)
+	mux.HandleFunc("POST /api/rooms/availability/sync-bpjs", roomController.SyncRoomsFromBPJS)
 }
