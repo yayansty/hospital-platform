@@ -11,9 +11,14 @@ type ValidationError struct {
 func (e *ValidationError) Error() string {
 	return "validation failed"
 }
-
+ 
 var (
 	ErrNotFound = errors.New("not found")
 	ErrConflict = errors.New("conflict")
 	ErrDatabase = errors.New("database error")
 )
+
+var ErrDuplicateMedicalRecordNumber = errors.New(
+	"medical_record_number already exists",
+)
+

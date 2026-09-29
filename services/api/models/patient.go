@@ -11,3 +11,9 @@ type Patient struct {
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`
 }
+
+type PatientPatch struct {
+	Name      *string    `json:"name"`
+	BirthDate *time.Time `json:"birth_date"`
+	Gender    *string    `json:"gender"`
+}

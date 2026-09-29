@@ -18,6 +18,7 @@ func RegisterRoutes(
 	mux.HandleFunc("GET /api/patients/{id}", patientController.GetByID)
 	mux.HandleFunc("POST /api/patients", patientController.Create)
 	mux.HandleFunc("PUT /api/patients/{id}", patientController.Update)
+	mux.HandleFunc("PATCH /api/patients/{id}", patientController.Patch)
 	mux.HandleFunc("DELETE /api/patients/{id}", patientController.Delete)
 
 	mux.HandleFunc("GET /api/rooms/availability", roomController.GetAvailability)

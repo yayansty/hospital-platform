@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"time"
 
 	"medic-api/clients"
 	"medic-api/models"
@@ -51,25 +52,67 @@ func (s *RoomService) UpdateOneRoomToBPJS(
 	return nil, fmt.Errorf("room %s not found", kodeRuang)
 }
 
+// func (s *RoomService) UpdateAllRoomsToBPJS() ([]*clients.AplicareResponse, error) {
+// 	rooms, err := s.repository.FindAvailability()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	var responses []*clients.AplicareResponse
+
+// 	for _, room := range rooms {
+// 		response, err := s.aplicareClient.UpdateBed(room)
+// 		if err != nil {
+// 			return nil, fmt.Errorf(
+// 				"failed to update room %s to BPJS: %w",
+// 				room.KodeRuang,
+// 				err,
+// 			)
+// 		}
+
+// 		responses = append(responses, response)
+// 	}
+
+//		return responses, nil
+//	}
 func (s *RoomService) UpdateAllRoomsToBPJS() ([]*clients.AplicareResponse, error) {
+
 	rooms, err := s.repository.FindAvailability()
 	if err != nil {
 		return nil, err
 	}
 
-	var responses []*clients.AplicareResponse
+	responses := make([]*clients.AplicareResponse, 0, len(rooms))
 
-	for _, room := range rooms {
+	for i, room := range rooms {
+
+		fmt.Printf(
+			"Updating room %d/%d to BPJS: %s\n",
+			i+1,
+			len(rooms),
+			room.KodeRuang,
+		)
+
 		response, err := s.aplicareClient.UpdateBed(room)
+
 		if err != nil {
 			return nil, fmt.Errorf(
-				"failed to update room %s to BPJS: %w",
+				"failed updating room %s: %w",
 				room.KodeRuang,
 				err,
 			)
 		}
 
 		responses = append(responses, response)
+
+		// =====================================================
+		// Jeda antar request ke BPJS.
+		// Jangan melakukan request 11 kamar secara berturut-turut
+		// tanpa jeda.
+		// =====================================================
+		if i < len(rooms)-1 {
+			time.Sleep(500 * time.Millisecond)
+		}
 	}
 
 	return responses, nil

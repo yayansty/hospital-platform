@@ -1,7 +1,7 @@
 package controllers
 
 import (
-    "encoding/json"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -55,36 +55,36 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-patient, err := c.service.GetPatientByID(id)
-if err != nil {
-	if errors.Is(err, helpers.ErrNotFound) {
-		helpers.Error(
-			w,
-			http.StatusNotFound,
-			"Patient not found",
-			nil,
-		)
-		return
-	}
+	patient, err := c.service.GetPatientByID(id)
+	if err != nil {
+		if errors.Is(err, helpers.ErrNotFound) {
+			helpers.Error(
+				w,
+				http.StatusNotFound,
+				"Patient not found",
+				nil,
+			)
+			return
+		}
 
-	if errors.Is(err, helpers.ErrDatabase) {
+		if errors.Is(err, helpers.ErrDatabase) {
+			helpers.Error(
+				w,
+				http.StatusInternalServerError,
+				"Database error",
+				nil,
+			)
+			return
+		}
+
 		helpers.Error(
 			w,
 			http.StatusInternalServerError,
-			"Database error",
+			"Failed to get patient",
 			nil,
 		)
 		return
 	}
-
-	helpers.Error(
-		w,
-		http.StatusInternalServerError,
-		"Failed to get patient",
-		nil,
-	)
-	return
-}
 
 	helpers.Success(
 		w,
@@ -107,9 +107,30 @@ func (c *PatientController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := c.service.CreatePatient(&patient)
+	//err := c.service.CreatePatient(&patient)
 
-	if err != nil {
+	// if err != nil {
+	// 	var validationErr *helpers.ValidationError
+
+	// 	if errors.As(err, &validationErr) {
+	// 		helpers.Error(
+	// 			w,
+	// 			http.StatusBadRequest,
+	// 			"Validation failed",
+	// 			validationErr.Errors,
+	// 		)
+	// 		return
+	// 	}
+
+	// 	helpers.Error(
+	// 		w,
+	// 		http.StatusInternalServerError,
+	// 		"Failed to create patient",
+	// 		nil,
+	// 	)
+	// 	return
+	// }
+	if err := c.service.CreatePatient(&patient); err != nil {
 		var validationErr *helpers.ValidationError
 
 		if errors.As(err, &validationErr) {
@@ -122,12 +143,17 @@ func (c *PatientController) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		helpers.Error(
-			w,
-			http.StatusInternalServerError,
-			"Failed to create patient",
-			nil,
-		)
+		if errors.Is(err, helpers.ErrDuplicateMedicalRecordNumber) {
+			helpers.Error(
+				w,
+				http.StatusConflict,
+				"Medical record number already exists",
+				nil,
+			)
+			return
+		}
+
+		http.Error(w, "Failed to create patient", http.StatusInternalServerError)
 		return
 	}
 
@@ -183,24 +209,24 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if errors.Is(err, helpers.ErrNotFound) {
-	         helpers.Error(
-		     w,
-		     http.StatusNotFound,
-		     "Patient not found",
-		     nil,
-	       )
-	       return
-        }
+			helpers.Error(
+				w,
+				http.StatusNotFound,
+				"Patient not found",
+				nil,
+			)
+			return
+		}
 
-        if errors.Is(err, helpers.ErrDatabase) {
-	        helpers.Error(
-		    w,
-		    http.StatusInternalServerError,
-		    "Database error",
-		    nil,
-	       )
-	       return
-        }
+		if errors.Is(err, helpers.ErrDatabase) {
+			helpers.Error(
+				w,
+				http.StatusInternalServerError,
+				"Database error",
+				nil,
+			)
+			return
+		}
 
 		helpers.Error(
 			w,
@@ -244,40 +270,119 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-    if err := c.service.DeletePatient(id); err != nil {
-	   if errors.Is(err, helpers.ErrNotFound) {
-		  helpers.Error(
-			 w,
-			 http.StatusNotFound,
-			 "Patient not found",
-			 nil,
-		 )
-		return
-	}
+	if err := c.service.DeletePatient(id); err != nil {
+		if errors.Is(err, helpers.ErrNotFound) {
+			helpers.Error(
+				w,
+				http.StatusNotFound,
+				"Patient not found",
+				nil,
+			)
+			return
+		}
 
-	if errors.Is(err, helpers.ErrDatabase) {
-		  helpers.Error(
+		if errors.Is(err, helpers.ErrDatabase) {
+			helpers.Error(
+				w,
+				http.StatusInternalServerError,
+				"Database error",
+				nil,
+			)
+			return
+		}
+
+		helpers.Error(
 			w,
 			http.StatusInternalServerError,
-			"Database error",
+			"Failed to delete patient",
 			nil,
 		)
 		return
 	}
-
-	helpers.Error(
-		w,
-		http.StatusInternalServerError,
-		"Failed to delete patient",
-		nil,
-	)
-	return
-    }
 
 	helpers.Success(
 		w,
 		http.StatusOK,
 		"Patient deleted successfully",
 		nil,
+	)
+}
+
+func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		helpers.Error(
+			w,
+			http.StatusBadRequest,
+			"Invalid patient ID",
+			nil,
+		)
+		return
+	}
+
+	var patch models.PatientPatch
+
+	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+		helpers.Error(
+			w,
+			http.StatusBadRequest,
+			"Invalid JSON",
+			nil,
+		)
+		return
+	}
+
+	err = c.service.PatchPatient(id, &patch)
+
+	if err != nil {
+		var validationErr *helpers.ValidationError
+
+		if errors.As(err, &validationErr) {
+			helpers.Error(
+				w,
+				http.StatusBadRequest,
+				"Validation failed",
+				validationErr.Errors,
+			)
+			return
+		}
+
+		if errors.Is(err, helpers.ErrNotFound) {
+			helpers.Error(
+				w,
+				http.StatusNotFound,
+				"Patient not found",
+				nil,
+			)
+			return
+		}
+
+		helpers.Error(
+			w,
+			http.StatusInternalServerError,
+			"Failed to update patient",
+			nil,
+		)
+		return
+	}
+
+	patient, err := c.service.GetPatientByID(id)
+	if err != nil {
+		helpers.Error(
+			w,
+			http.StatusInternalServerError,
+			"Failed to get updated patient",
+			nil,
+		)
+		return
+	}
+
+	helpers.Success(
+		w,
+		http.StatusOK,
+		"Patient updated successfully",
+		patient,
 	)
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"strings"
 
 	"medic-api/helpers"
 	"medic-api/models"
@@ -105,6 +106,38 @@ func (r *PatientRepository) FindByID(id int64) (*models.Patient, error) {
 	return &patient, nil
 }
 
+// func (r *PatientRepository) Create(patient *models.Patient) error {
+// 	query := `
+// 		INSERT INTO patients (
+// 			medical_record_number,
+// 			name,
+// 			birth_date,
+// 			gender
+// 		)
+// 		OUTPUT
+// 			INSERTED.id,
+// 			INSERTED.created_at,
+// 			INSERTED.updated_at
+// 		VALUES (
+// 			@p1,
+// 			@p2,
+// 			@p3,
+// 			@p4
+// 		)
+// 	`
+
+//		return r.db.QueryRow(
+//			query,
+//			patient.MedicalRecordNumber,
+//			patient.Name,
+//			patient.BirthDate,
+//			patient.Gender,
+//		).Scan(
+//			&patient.ID,
+//			&patient.CreatedAt,
+//			&patient.UpdatedAt,
+//		)
+//	}
 func (r *PatientRepository) Create(patient *models.Patient) error {
 	query := `
 		INSERT INTO patients (
@@ -125,7 +158,7 @@ func (r *PatientRepository) Create(patient *models.Patient) error {
 		)
 	`
 
-	return r.db.QueryRow(
+	err := r.db.QueryRow(
 		query,
 		patient.MedicalRecordNumber,
 		patient.Name,
@@ -136,7 +169,20 @@ func (r *PatientRepository) Create(patient *models.Patient) error {
 		&patient.CreatedAt,
 		&patient.UpdatedAt,
 	)
+
+	if err != nil {
+		// SQL Server duplicate key
+		if strings.Contains(err.Error(), "UQ_patients_medical_record_number") ||
+			strings.Contains(err.Error(), "duplicate key") {
+			return helpers.ErrDuplicateMedicalRecordNumber
+		}
+
+		return err
+	}
+
+	return nil
 }
+
 func (r *PatientRepository) Update(patient *models.Patient) error {
 	query := `
 		UPDATE patients
@@ -188,6 +234,44 @@ func (r *PatientRepository) Delete(id int64) error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return helpers.ErrDatabase
+	}
+
+	if rowsAffected == 0 {
+		return helpers.ErrNotFound
+	}
+
+	return nil
+}
+
+func (r *PatientRepository) Patch(
+	id int64,
+	patch *models.PatientPatch,
+) error {
+	query := `
+		UPDATE patients
+		SET
+			name = COALESCE(@p2, name),
+			birth_date = COALESCE(@p3, birth_date),
+			gender = COALESCE(@p4, gender),
+			updated_at = GETUTCDATE()
+		WHERE id = @p1
+	`
+
+	result, err := r.db.Exec(
+		query,
+		id,
+		patch.Name,
+		patch.BirthDate,
+		patch.Gender,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
 	}
 
 	if rowsAffected == 0 {
