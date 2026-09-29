@@ -47,5 +47,8 @@ services/*/coverage/
 # OS
 # =====================================================
 
+# Docker image export
+*.tar
+
 .DS_Store
 Thumbs.db
