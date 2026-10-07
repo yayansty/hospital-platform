@@ -23,6 +23,7 @@ func (c *RoomController) GetAvailability(w http.ResponseWriter, r *http.Request)
 			http.StatusInternalServerError,
 			"Failed to retrieve room availability",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -32,6 +33,7 @@ func (c *RoomController) GetAvailability(w http.ResponseWriter, r *http.Request)
 		http.StatusOK,
 		"Room availability retrieved successfully",
 		rooms,
+		nil,
 	)
 }
 
@@ -43,6 +45,7 @@ func (c *RoomController) UpdateOneRoomToBPJS(w http.ResponseWriter, r *http.Requ
 			w,
 			http.StatusBadRequest,
 			"Kode ruang is required",
+			nil,
 			nil,
 		)
 		return
@@ -57,6 +60,7 @@ func (c *RoomController) UpdateOneRoomToBPJS(w http.ResponseWriter, r *http.Requ
 				http.StatusInternalServerError,
 				"Failed to update all rooms to BPJS",
 				err.Error(),
+				nil,
 			)
 			return
 		}
@@ -66,6 +70,7 @@ func (c *RoomController) UpdateOneRoomToBPJS(w http.ResponseWriter, r *http.Requ
 			http.StatusOK,
 			"All rooms successfully updated to BPJS",
 			response,
+		    nil,
 		)
 		return
 	}
@@ -78,6 +83,7 @@ func (c *RoomController) UpdateOneRoomToBPJS(w http.ResponseWriter, r *http.Requ
 			http.StatusInternalServerError,
 			"Failed to update room to BPJS",
 			err.Error(),
+			nil,
 		)
 		return
 	}
@@ -87,6 +93,7 @@ func (c *RoomController) UpdateOneRoomToBPJS(w http.ResponseWriter, r *http.Requ
 		http.StatusOK,
 		"Room successfully updated to BPJS",
 		response,
+		nil,
 	)
 }
 
@@ -98,6 +105,7 @@ func (c *RoomController) ReadRoomsFromBPJS(w http.ResponseWriter, r *http.Reques
 			http.StatusInternalServerError,
 			"Failed to read rooms from BPJS",
 			err.Error(),
+			nil,
 		)
 		return
 	}
@@ -107,6 +115,7 @@ func (c *RoomController) ReadRoomsFromBPJS(w http.ResponseWriter, r *http.Reques
 		http.StatusOK,
 		"Rooms successfully retrieved from BPJS",
 		response,
+		nil,
 	)
 }
 
@@ -122,6 +131,7 @@ func (c *RoomController) SyncRoomsFromBPJS(
 			http.StatusInternalServerError,
 			"Failed to sync rooms from BPJS",
 			err.Error(),
+			nil,
 		)
 		return
 	}
@@ -131,5 +141,6 @@ func (c *RoomController) SyncRoomsFromBPJS(
 		http.StatusOK,
 		"Rooms successfully synchronized from BPJS to Oracle",
 		results,
+		nil,
 	)
 }

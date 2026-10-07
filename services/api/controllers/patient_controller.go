@@ -29,6 +29,7 @@ func (c *PatientController) GetAll(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 			"Failed to get patients",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -38,6 +39,7 @@ func (c *PatientController) GetAll(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		"Patients retrieved successfully",
 		patients,
+		nil,
 	)
 }
 
@@ -51,6 +53,7 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 			"Invalid patient ID",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -63,6 +66,7 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 				http.StatusNotFound,
 				"Patient not found",
 				nil,
+				nil,
 			)
 			return
 		}
@@ -73,6 +77,7 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError,
 				"Database error",
 				nil,
+				nil,
 			)
 			return
 		}
@@ -81,6 +86,7 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 			"Failed to get patient",
+			nil,
 			nil,
 		)
 		return
@@ -91,6 +97,7 @@ func (c *PatientController) GetByID(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		"Patient retrieved successfully",
 		patient,
+		nil,
 	)
 }
 
@@ -102,6 +109,7 @@ func (c *PatientController) Create(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusBadRequest,
 			"Invalid JSON",
+			nil,
 			nil,
 		)
 		return
@@ -139,6 +147,7 @@ func (c *PatientController) Create(w http.ResponseWriter, r *http.Request) {
 				http.StatusBadRequest,
 				"Validation failed",
 				validationErr.Errors,
+				nil,
 			)
 			return
 		}
@@ -148,6 +157,7 @@ func (c *PatientController) Create(w http.ResponseWriter, r *http.Request) {
 				w,
 				http.StatusConflict,
 				"Medical record number already exists",
+				nil,
 				nil,
 			)
 			return
@@ -159,9 +169,10 @@ func (c *PatientController) Create(w http.ResponseWriter, r *http.Request) {
 
 	helpers.Success(
 		w,
-		http.StatusCreated,
+		http.StatusOK,
 		"Patient created successfully",
 		patient,
+		nil,
 	)
 }
 
@@ -175,6 +186,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 			"Invalid patient ID",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -186,6 +198,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusBadRequest,
 			"Invalid JSON",
+			nil,
 			nil,
 		)
 		return
@@ -204,6 +217,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 				http.StatusBadRequest,
 				"Validation failed",
 				validationErr.Errors,
+				nil,
 			)
 			return
 		}
@@ -213,6 +227,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 				w,
 				http.StatusNotFound,
 				"Patient not found",
+				nil,
 				nil,
 			)
 			return
@@ -224,6 +239,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError,
 				"Database error",
 				nil,
+				nil,
 			)
 			return
 		}
@@ -232,6 +248,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 			"Failed to update patient",
+			nil,
 			nil,
 		)
 		return
@@ -244,6 +261,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 			"Failed to get updated patient",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -253,6 +271,7 @@ func (c *PatientController) Update(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		"Patient updated successfully",
 		updatedPatient,
+		nil,
 	)
 }
 
@@ -266,6 +285,7 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 			"Invalid patient ID",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -277,6 +297,7 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 				http.StatusNotFound,
 				"Patient not found",
 				nil,
+				nil,
 			)
 			return
 		}
@@ -287,6 +308,7 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError,
 				"Database error",
 				nil,
+				nil,
 			)
 			return
 		}
@@ -296,6 +318,7 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 			"Failed to delete patient",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -304,6 +327,7 @@ func (c *PatientController) Delete(w http.ResponseWriter, r *http.Request) {
 		w,
 		http.StatusOK,
 		"Patient deleted successfully",
+		nil,
 		nil,
 	)
 }
@@ -318,6 +342,7 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 			"Invalid patient ID",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -329,6 +354,7 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusBadRequest,
 			"Invalid JSON",
+			nil,
 			nil,
 		)
 		return
@@ -345,6 +371,7 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 				http.StatusBadRequest,
 				"Validation failed",
 				validationErr.Errors,
+				nil,
 			)
 			return
 		}
@@ -355,6 +382,7 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 				http.StatusNotFound,
 				"Patient not found",
 				nil,
+				nil,
 			)
 			return
 		}
@@ -363,6 +391,7 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 			w,
 			http.StatusInternalServerError,
 			"Failed to update patient",
+			nil,
 			nil,
 		)
 		return
@@ -375,6 +404,7 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 			"Failed to get updated patient",
 			nil,
+			nil,
 		)
 		return
 	}
@@ -384,5 +414,6 @@ func (c *PatientController) Patch(w http.ResponseWriter, r *http.Request) {
 		http.StatusOK,
 		"Patient updated successfully",
 		patient,
+		nil,
 	)
 }

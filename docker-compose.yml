@@ -76,6 +76,7 @@ services:
     restart: always
 
     environment:
+      TZ: Asia/Jakarta 
       ACCEPT_EULA: ${ACCEPT_EULA}
       MSSQL_SA_PASSWORD: ${SA_PASSWORD}
       MSSQL_PID: Developer

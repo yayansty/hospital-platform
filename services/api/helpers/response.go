@@ -6,10 +6,11 @@ import (
 )
 
 type APIResponse struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-	Errors  interface{} `json:"errors,omitempty"`
+	Code     int         `json:"code"`
+	Message  string      `json:"message,omitempty"`
+	Data     interface{} `json:"data,omitempty"`
+	Errors   interface{} `json:"errors,omitempty"`
+	MetaData interface{} `json:"metaData,omitempty"`
 }
 
 func JSONResponse(
@@ -28,11 +29,13 @@ func Success(
 	status int,
 	message string,
 	data interface{},
+	metaData interface{},
 ) {
 	JSONResponse(w, status, APIResponse{
-		Success: true,
-		Message: message,
-		Data:    data,
+		Code:     status,
+		Message:  message,
+		Data:     data,
+		MetaData: metaData,
 	})
 }
 
@@ -41,10 +44,12 @@ func Error(
 	status int,
 	message string,
 	errors interface{},
+	metaData interface{},
 ) {
 	JSONResponse(w, status, APIResponse{
-		Success: false,
-		Message: message,
-		Errors:  errors,
+		Code:     status,
+		Message:  message,
+		Errors:   errors,
+		MetaData: metaData,
 	})
 }

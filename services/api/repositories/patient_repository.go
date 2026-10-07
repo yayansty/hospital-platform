@@ -253,7 +253,7 @@ func (r *PatientRepository) Patch(
 			name = COALESCE(@p2, name),
 			birth_date = COALESCE(@p3, birth_date),
 			gender = COALESCE(@p4, gender),
-			updated_at = GETUTCDATE()
+			updated_at = GETDATE()
 		WHERE id = @p1
 	`
 
