@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"medic-api/helpers"
@@ -18,7 +19,176 @@ func NewPatientRepository(db *sql.DB) *PatientRepository {
 	}
 }
 
-func (r *PatientRepository) FindAll() ([]models.Patient, error) {
+// func (r *PatientRepository) FindAll() ([]models.Patient, error) {
+// 	query := `
+// 		SELECT
+// 			id,
+// 			medical_record_number,
+// 			name,
+// 			birth_date,
+// 			gender,
+// 			created_at,
+// 			updated_at
+// 		FROM patients
+// 		ORDER BY id DESC
+// 	`
+
+// 	rows, err := r.db.Query(query)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	var patients []models.Patient
+
+// 	for rows.Next() {
+// 		var patient models.Patient
+
+// 		err := rows.Scan(
+// 			&patient.ID,
+// 			&patient.MedicalRecordNumber,
+// 			&patient.Name,
+// 			&patient.BirthDate,
+// 			&patient.Gender,
+// 			&patient.CreatedAt,
+// 			&patient.UpdatedAt,
+// 		)
+
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		patients = append(patients, patient)
+// 	}
+
+// 	if err := rows.Err(); err != nil {
+// 		return nil, err
+// 	}
+
+// 	return patients, nil
+// }
+
+func (r *PatientRepository) FindAll(
+	filter models.PatientFilter,
+) ([]models.Patient, models.PaginationMeta, error) {
+
+	conditions := []string{}
+	args := []interface{}{}
+
+	addCondition := func(condition string, value interface{}) {
+		args = append(args, value)
+		conditions = append(
+			conditions,
+			fmt.Sprintf(condition, len(args)),
+		)
+	}
+
+	fmt.Printf(
+		"DEBUG FILTER: DateFrom=%q DateTo=%q Gender=%q\n",
+		filter.DateFrom,
+		filter.DateTo,
+		filter.Gender,
+	)
+
+	// if filter.Search != "" {
+	// 	addCondition(
+	// 		"(name LIKE @p%d OR medical_record_number LIKE @p%d)",
+	// 		"%"+filter.Search+"%",
+	// 	)
+	// 	// Placeholder untuk dua kolom harus sama.
+	// 	last := len(args)
+	// 	conditions[len(conditions)-1] = fmt.Sprintf(
+	// 		"(name LIKE @p%d OR medical_record_number LIKE @p%d)",
+	// 		last,
+	// 		last,
+	// 	)
+	// }
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
+		p := len(args)
+
+		conditions = append(conditions, fmt.Sprintf(
+			"(name LIKE @p%d OR medical_record_number LIKE @p%d)",
+			p,
+			p,
+		))
+	}
+
+	if filter.MedicalRecordNumber != "" {
+		addCondition(
+			"medical_record_number = @p%d",
+			filter.MedicalRecordNumber,
+		)
+	}
+
+	if filter.Gender != "" {
+		addCondition("gender = @p%d", filter.Gender)
+	}
+
+	if filter.DateFrom != "" {
+		args = append(args, filter.DateFrom)
+		conditions = append(
+			conditions,
+			fmt.Sprintf(
+				"created_at >= CAST(@p%d AS date)",
+				len(args),
+			),
+		)
+	}
+
+	if filter.DateTo != "" {
+		args = append(args, filter.DateTo)
+		conditions = append(
+			conditions,
+			fmt.Sprintf(
+				"created_at < DATEADD(day, 1, CAST(@p%d AS date))",
+				len(args),
+			),
+		)
+	}
+
+	whereSQL := ""
+	if len(conditions) > 0 {
+		whereSQL = " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// Hitung total data yang sesuai dengan filter.
+	countQuery := "SELECT COUNT(*) FROM patients" + whereSQL
+
+	var total int
+	err := r.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, models.PaginationMeta{}, helpers.ErrDatabase
+	}
+
+	// Hitung offset halaman.
+	offset := (filter.Page - 1) * filter.Limit
+
+	dataArgs := append([]interface{}{}, args...)
+	dataArgs = append(dataArgs, offset, filter.Limit)
+
+	offsetParam := len(dataArgs) - 1
+	limitParam := len(dataArgs)
+
+	sortColumns := map[string]string{
+		"id":                    "id",
+		"name":                  "name",
+		"medical_record_number": "medical_record_number",
+		"birth_date":            "birth_date",
+		"created_at":            "created_at",
+		"updated_at":            "updated_at",
+	}
+
+	sortColumn, ok := sortColumns[filter.SortBy]
+	if !ok {
+		sortColumn = "id"
+	}
+
+	sortOrder := strings.ToUpper(filter.SortOrder)
+	if sortOrder != "ASC" && sortOrder != "DESC" {
+		sortOrder = "DESC"
+	}
+
 	query := `
 		SELECT
 			id,
@@ -28,22 +198,28 @@ func (r *PatientRepository) FindAll() ([]models.Patient, error) {
 			gender,
 			created_at,
 			updated_at
-		FROM patients
-		ORDER BY id DESC
-	`
+		FROM patients` + whereSQL + fmt.Sprintf(`
+		ORDER BY %s %s
+		OFFSET @p%d ROWS
+		FETCH NEXT @p%d ROWS ONLY`,
+		sortColumn,
+		sortOrder,
+		offsetParam,
+		limitParam,
+	)
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, dataArgs...)
 	if err != nil {
-		return nil, err
+		return nil, models.PaginationMeta{}, helpers.ErrDatabase
 	}
 	defer rows.Close()
 
-	var patients []models.Patient
+	patients := []models.Patient{}
 
 	for rows.Next() {
 		var patient models.Patient
 
-		err := rows.Scan(
+		if err := rows.Scan(
 			&patient.ID,
 			&patient.MedicalRecordNumber,
 			&patient.Name,
@@ -51,21 +227,32 @@ func (r *PatientRepository) FindAll() ([]models.Patient, error) {
 			&patient.Gender,
 			&patient.CreatedAt,
 			&patient.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, err
+		); err != nil {
+			return nil, models.PaginationMeta{}, helpers.ErrDatabase
 		}
 
 		patients = append(patients, patient)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, models.PaginationMeta{}, helpers.ErrDatabase
 	}
 
-	return patients, nil
+	totalPages := 0
+	if total > 0 {
+		totalPages = (total + filter.Limit - 1) / filter.Limit
+	}
+
+	meta := models.PaginationMeta{
+		Page:       filter.Page,
+		Limit:      filter.Limit,
+		Total:      total,
+		TotalPages: totalPages,
+	}
+
+	return patients, meta, nil
 }
+
 func (r *PatientRepository) FindByID(id int64) (*models.Patient, error) {
 	query := `
 		SELECT

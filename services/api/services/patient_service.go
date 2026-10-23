@@ -19,8 +19,104 @@ func NewPatientService(repository *repositories.PatientRepository) *PatientServi
 	}
 }
 
-func (s *PatientService) GetAllPatients() ([]models.Patient, error) {
-	return s.repository.FindAll()
+// func (s *PatientService) GetAllPatients() ([]models.Patient, error) {
+// 	return s.repository.FindAll()
+// }
+
+func (s *PatientService) GetAllPatients(
+	filter models.PatientFilter,
+) ([]models.Patient, models.PaginationMeta, error) {
+
+	validationErrors := helpers.ValidationErrors{}
+
+	if filter.Page == 0 {
+		filter.Page = 1
+	}
+	if filter.Limit == 0 {
+		filter.Limit = 10
+	}
+
+	if filter.Page < 1 {
+		validationErrors["page"] = "must be at least 1"
+	}
+
+	if filter.Limit < 1 || filter.Limit > 100 {
+		validationErrors["limit"] = "must be between 1 and 100"
+	}
+
+	filter.Search = strings.TrimSpace(filter.Search)
+	filter.MedicalRecordNumber = strings.TrimSpace(
+		filter.MedicalRecordNumber,
+	)
+	filter.Gender = strings.ToUpper(strings.TrimSpace(filter.Gender))
+
+	if filter.Gender != "" &&
+		filter.Gender != "M" &&
+		filter.Gender != "F" {
+		validationErrors["gender"] = "must be M or F"
+	}
+
+	// Default pengurutan
+	if filter.SortBy == "" {
+		filter.SortBy = "id"
+	}
+	if filter.SortOrder == "" {
+		filter.SortOrder = "DESC"
+	}
+
+	filter.SortBy = strings.ToLower(strings.TrimSpace(filter.SortBy))
+	filter.SortOrder = strings.ToUpper(strings.TrimSpace(filter.SortOrder))
+
+	allowedSortColumns := map[string]bool{
+		"id":                    true,
+		"name":                  true,
+		"medical_record_number": true,
+		"birth_date":            true,
+		"created_at":            true,
+		"updated_at":            true,
+	}
+
+	if !allowedSortColumns[filter.SortBy] {
+		validationErrors["sort_by"] = "is not a supported column"
+	}
+
+	if filter.SortOrder != "ASC" && filter.SortOrder != "DESC" {
+		validationErrors["sort_order"] = "must be ASC or DESC"
+	}
+
+	// Validasi format tanggal dan rentang tanggal
+	var dateFrom, dateTo time.Time
+
+	if filter.DateFrom != "" {
+		parsed, err := time.Parse("2006-01-02", filter.DateFrom)
+		if err != nil {
+			validationErrors["date_from"] = "must use YYYY-MM-DD format"
+		} else {
+			dateFrom = parsed
+		}
+	}
+
+	if filter.DateTo != "" {
+		parsed, err := time.Parse("2006-01-02", filter.DateTo)
+		if err != nil {
+			validationErrors["date_to"] = "must use YYYY-MM-DD format"
+		} else {
+			dateTo = parsed
+		}
+	}
+
+	if !dateFrom.IsZero() &&
+		!dateTo.IsZero() &&
+		dateFrom.After(dateTo) {
+		validationErrors["date_from"] = "must not be after date_to"
+	}
+
+	if len(validationErrors) > 0 {
+		return nil, models.PaginationMeta{},
+			&helpers.ValidationError{Errors: validationErrors}
+	}
+
+	return s.repository.FindAll(filter)
 }
 
 func (s *PatientService) GetPatientByID(id int64) (*models.Patient, error) {

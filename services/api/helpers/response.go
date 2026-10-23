@@ -3,6 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"net/http"
+	"errors"
 )
 
 type APIResponse struct {
@@ -52,4 +53,57 @@ func Error(
 		Errors:   errors,
 		MetaData: metaData,
 	})
+}
+
+func HandleError(w http.ResponseWriter, err error) {
+	var validationErr *ValidationError
+
+	if errors.As(err, &validationErr) {
+		Error(
+			w,
+			http.StatusBadRequest,
+			"Validation failed",
+			validationErr.Errors,
+			nil,
+		)
+		return
+	}
+
+	switch {
+	case errors.Is(err, ErrNotFound):
+		Error(
+			w,
+			http.StatusNotFound,
+			"Patient not found",
+			nil,
+			nil,
+		)
+
+	case errors.Is(err, ErrDuplicateMedicalRecordNumber):
+		Error(
+			w,
+			http.StatusConflict,
+			"Medical record number already exists",
+			nil,
+			nil,
+		)
+
+	case errors.Is(err, ErrDatabase):
+		Error(
+			w,
+			http.StatusInternalServerError,
+			"Database error",
+			nil,
+			nil,
+		)
+
+	default:
+		Error(
+			w,
+			http.StatusInternalServerError,
+			"Internal server error",
+			nil,
+			nil,
+		)
+	}
 }

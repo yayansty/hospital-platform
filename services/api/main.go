@@ -42,6 +42,7 @@ func main() {
 	// =========================
 	healthRepository := repositories.NewHealthRepository(db)
 	patientRepository := repositories.NewPatientRepository(db)
+	userRepository := repositories.NewUserRepository(db)
 
 	// Room menggunakan Oracle
 	roomRepository := repositories.NewRoomRepository(oracleDB)
@@ -56,6 +57,7 @@ func main() {
 	// =========================
 	healthService := services.NewHealthService(healthRepository)
 	patientService := services.NewPatientService(patientRepository)
+	authService := services.NewAuthService(userRepository)
 
 	// Room menggunakan Oracle + BPJS Aplicare
 	roomService := services.NewRoomService(
@@ -68,6 +70,8 @@ func main() {
 	// =========================
 	healthController := controllers.NewHealthController(healthService)
 	patientController := controllers.NewPatientController(patientService)
+	authController := controllers.NewAuthController(authService)
+	profileController := controllers.NewProfileController()
 
 	// Room menggunakan Oracle + BPJS Aplicare
 	roomController := controllers.NewRoomController(roomService)
@@ -82,6 +86,8 @@ func main() {
 		healthController,
 		patientController,
 		roomController,
+		authController,
+		profileController,
 	)
 
 	fmt.Println("MEDIC API running on :8080")

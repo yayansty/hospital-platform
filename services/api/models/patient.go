@@ -17,3 +17,31 @@ type PatientPatch struct {
 	BirthDate *time.Time `json:"birth_date"`
 	Gender    *string    `json:"gender"`
 }
+
+//	type PatientFilter struct {
+//		Page                int
+//		Limit               int
+//		Search              string
+//		MedicalRecordNumber string
+//		Gender              string
+//	}
+type PatientFilter struct {
+	Page                int
+	Limit               int
+	Search              string
+	MedicalRecordNumber string
+	Gender              string
+
+	SortBy    string
+	SortOrder string
+
+	DateFrom string
+	DateTo   string
+}
+
+type PaginationMeta struct {
+	Page       int `json:"page"`
+	Limit      int `json:"limit"`
+	Total      int `json:"total"`
+	TotalPages int `json:"total_pages"`
+}

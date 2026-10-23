@@ -17,6 +17,8 @@ services:
       TZ: Asia/Jakarta
       GOCACHE: /tmp/go-build
 
+      JWT_SECRET: ${JWT_SECRET}
+
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
